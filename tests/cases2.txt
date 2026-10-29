@@ -1,0 +1,500 @@
+a=(); echo ${#a[@]} "${a[@]}" end; b=("x y" z); printf '<%s>' "${b[@]}"; echo; printf '<%s>' ${b[@]}; echo
+%%
+set -- 1 2 3 4 5; echo ${@:2} ${@:2:2} ${*: -2} ${#@}
+%%
+arr=(a b c d e); echo ${arr[@]:1:3} ${arr[@]: -2}; echo ${arr[@]/b/B} ${arr[@]^}; echo ${#arr[*]}
+%%
+declare -A h; h[one]=1; h[two]=2; unset 'h[one]'; echo ${!h[@]} ${h[two]} ${#h[@]}
+%%
+x=hello; echo ${x:1:-1} ${x::2} ${x:10} [${x:5}]
+%%
+p=/a/b/c; IFS=/ read -ra parts <<< "$p"; echo ${#parts[@]} "${parts[1]}"
+%%
+s='a.b.c'; echo ${s//./-} ${s/./} ${s##*.} ${s%%.*}; t=aaa; echo ${t/#a/b} ${t/%a/b} ${t//a}
+%%
+v=abc; echo ${v^^[ab]} ${v~~} ; w=ABC; echo ${w,,[B]}
+%%
+n=0; f() { n=$((n+1)); [ $n -lt 5 ] && f; }; f; echo $n
+%%
+f() { local -a a=(1 2 3); echo ${#a[@]}; }; f; echo ${#a[@]}
+%%
+f() { echo $#; }; f "" ""; f; f "$@"; set -- a; f "$@" "$@"
+%%
+x=global; f() { local x=local; g; }; g() { echo $x; x=changed; }; f; echo $x
+%%
+f() { declare -g G=1; local L=2; }; f; echo "${G-unset} ${L-unset}"
+%%
+sum() { local s=0 i; for i; do ((s+=i)); done; echo $s; }; sum 1 2 3 4
+%%
+out=$(f() { echo in-func; }; f); echo $out
+%%
+cnt=0; while read -r w; do ((cnt+=${#w})); done < <(printf '%s\n' ab cde f); echo $cnt
+%%
+exec 4<data/fruits.txt; read -u 4 a; read -u 4 b; echo $a $b; exec 4<&-
+%%
+{ read a; read b; } < data/fruits.txt; echo "$a+$b"
+%%
+while read -r a b; do echo "$b-$a"; done <<< $'1 one\n2 two'
+%%
+cat <<< "here string with $HOME" | sed "s#$HOME#~#"
+%%
+f() { cat; }; echo piped | f; f <<< here
+%%
+echo a b c | { read -r first rest; echo "$rest|$first"; }
+%%
+r=$(exit 3); echo $?; r=$(true); echo $?
+%%
+if [ "$(echo x)" = x ]; then echo eq; fi; [ -n "$(echo)" ] || echo empty
+%%
+a=5; b=a; echo $(( b + 1 )); c='1+2'; echo $(( c * 2 ))
+%%
+echo $(( 5 > 3 ? 10 : 20 )) $(( ~0 )) $(( 7 & 3 )) $(( 7 | 8 )) $(( 7 ^ 2 )) $(( !0 )) $(( 1 , 2 ))
+%%
+i=5; echo $(( i++ )) $i $(( ++i )) $(( i-- )) $i
+%%
+x=10; (( x /= 3, x *= 4 )); echo $x; (( 0 )); echo $?; (( 5 )); echo $?
+%%
+for ((i=0, j=10; i<j; i+=3, j-=3)); do echo "$i $j"; done
+%%
+for i in $(seq 3); do for j in $(seq $i); do printf '*'; done; echo; done
+%%
+IFS=$'\n'; for l in $(printf 'a b\nc d\n'); do echo "[$l]"; done
+%%
+files=(data/*); echo ${#files[@]}; for f in "${files[@]}"; do [[ $f == *.txt ]] && echo "$f"; done
+%%
+shopt -s globstar; echo **/*.sh | tr ' ' '\n' | sort
+%%
+shopt -s dotglob; cd projects/website; echo *; shopt -u dotglob; echo *
+%%
+cd data; ls *.{txt,csv}; echo [[:alpha:]]*.json
+%%
+case 5 in [0-9]) echo digit;; esac; case abc in ???) echo three;; esac; case x in [!a-w]) echo notaw;; esac
+%%
+shopt -s nocasematch; case ABC in abc) echo matched;; esac; [[ ABC == abc ]] && echo dbl
+%%
+[[ "a b" == "a b" ]] && echo quoted; x="a*"; [[ abc == $x ]] && echo pat; [[ abc == "$x" ]] || echo literal
+%%
+re='^[0-9]+$'; for v in 42 4x; do [[ $v =~ $re ]] && echo "$v num" || echo "$v not"; done
+%%
+[[ "key=value" =~ ^([^=]+)=(.*)$ ]] && echo "${BASH_REMATCH[1]} -> ${BASH_REMATCH[2]} (${#BASH_REMATCH[@]})"
+%%
+[[ -f README.md && ! -d README.md ]] && echo ok; [[ ( 1 -eq 1 ) || 0 -eq 1 ]] && echo grouped
+%%
+[ ]; echo $?; [ "" ]; echo $?; [ x ]; echo $?; [ -n "" ]; echo $?; [ ! x ]; echo $?
+%%
+test 1 -eq 1 -a 2 -eq 3; echo $?; test abc \< abd; echo $?; [ 05 -eq 5 ]; echo $?
+%%
+[ x -eq 1 ] 2>&1; echo $?
+%%
+echo $(( 08 )) 2>&1; echo $?
+%%
+f() { echo "${FUNCNAME[@]}"; }; g() { f; }; g
+%%
+trap 'echo "caught $?"' ERR; f() { return 3; }; f; echo next
+%%
+trap 'echo one' EXIT; trap 'echo two' EXIT; trap -p EXIT
+%%
+set -e; f() { false; echo in-f; }; f || echo handled; echo end
+%%
+set -e; if false; then :; fi; false || true; ! false; echo survived
+%%
+set -e; x=$(false) || echo "subst failed"; echo end
+%%
+set -o errexit -o nounset; set -o | grep -E '^(errexit|nounset|pipefail) '
+%%
+set -f; echo *; set +f; echo * | wc -w
+%%
+set -- x y; shift; echo $1 $#; shift; echo "[$1]" $#; shift; echo $?
+%%
+echo "$0" | grep -c bash
+%%
+printf '%s\n' "$(printf 'a\tb')" | cat -A
+%%
+printf '%-10s|%10s|\n' left right; printf '%.3s\n' abcdef; printf '%+d % d\n' 5 5; printf '%#x %#o\n' 255 8
+%%
+printf '%s %s\n' a; printf '%d%%\n' 50; printf '%5.1f%%\n' 99.44; printf 'no newline'
+%%
+printf '%(%Y)T\n' 0 | grep -c 1970
+%%
+echo -e '\e[0m' | od -c | head -1
+%%
+printf '\101\x42C\n'
+%%
+echo "multi
+line"; echo 'it'\''s'
+%%
+echo \$HOME '\$HOME' "\$HOME" \\
+%%
+x='$HOME'; echo $x "$x"; eval echo $x
+%%
+cmd="echo hi"; $cmd; "$cmd" 2>&1 | head -1
+%%
+alias ll='ls -1'; ll data | head -2; unalias ll; type ll 2>&1
+%%
+hash -r; type -t echo printf ls cd
+%%
+command echo builtin-echo; builtin echo b2; enable -n 2>/dev/null; echo done
+%%
+declare -r C=5; declare -p C; unset C 2>&1; echo $C
+%%
+declare -a arr=([2]=two [5]=five); echo ${!arr[@]} ${arr[5]}; declare -p arr
+%%
+declare -A m=([k1]=v1); declare -p m
+%%
+x=1; declare -p x; export x; declare -p x; declare +x x; declare -p x
+%%
+local x=1 2>&1; echo $?
+%%
+f() { local x; x=5; echo "${x}"; }; f; echo "[${x-}]"
+%%
+readarray -t a <<< $'one\ntwo\nthree'; echo ${a[1]} ${#a[@]}
+%%
+IFS= read -r line <<< '  spaced  '; echo "[$line]"; read -r line <<< '  spaced  '; echo "[$line]"
+%%
+read a b c <<< 'only'; echo "[$a][$b][$c]"
+%%
+read -n 3 x <<< 'abcdef'; echo $x; read -d , y <<< 'one,two'; echo $y
+%%
+echo 'a\b' | (read x; echo "$x"); echo 'a\b' | (read -r x; echo "$x")
+%%
+getopts "a:" opt -a val; echo "$opt $OPTARG $OPTIND"
+%%
+f() { while getopts ":x:" o; do case $o in x) echo "x=$OPTARG";; :) echo "missing $OPTARG";; \?) echo "bad $OPTARG";; esac; done; }; f -x 1 -y; OPTIND=1; f -x
+%%
+dirs; pushd data > /dev/null; dirs; popd > /dev/null; dirs
+%%
+cd /usr/bin && cd .. && pwd && cd - && cd ../../ && pwd
+%%
+cd /nonexistent; echo $?; cd README.md; echo $?
+%%
+mkdir -p a/b; cd a/b; cd ../..; rm -r a; ls -d a 2>/dev/null || echo removed
+%%
+ln -s /usr/bin bl; cd bl; pwd; pwd -P; cd ..; rm bl
+%%
+umask 027; touch u1; mkdir u2; stat -c '%a' u1 u2
+%%
+touch -d '2020-01-02 03:04:05' old.txt; stat -c '%y' old.txt | cut -c1-19; [ old.txt -ot README.md ] && echo older
+%%
+echo x > a; cp -p a b; cmp a b && echo same; cp a c; mv -v c d; ls a b d
+%%
+mkdir src; touch src/f{1..3}; cp -r src dst; ls dst; rm -rv dst | sort
+%%
+touch f; mv f f; mv nofile x 2>&1; echo $?
+%%
+mkdir dd; touch dd/x; rmdir dd 2>&1; rm -d dd 2>&1; rm -r dd && echo gone
+%%
+find . -type f -name '*.sh' -perm -u+x | sort; find scripts -type f -printf '%f %s\n' | sort
+%%
+find data -name '*.txt' -o -name '*.csv' | sort; find data \( -name 'f*' -o -name 'p*' \) -type f | sort
+%%
+find . -maxdepth 2 -type d | sort | head -5; find . -mindepth 3 -type f | sort | head -3
+%%
+find data -type f -exec grep -l apple {} + ; find data -name '*.json' -exec cat {} \; | head -2
+%%
+find . -name README.md -delete; ls README.md 2>&1
+%%
+ls -la data | wc -l; ls -A | wc -l
+%%
+ls -l scripts | awk '{print $1, $NF}'
+%%
+ls -1t data | wc -l; ls -1S data | head -1; ls -1X data | head -2
+%%
+ls -ld data scripts | awk '{print $1}'
+%%
+ls -lh data/config.json | awk '{print $5}'; du -b data/config.json | cut -f1
+%%
+stat -c '%n %s %F' README.md data scripts/hello.sh
+%%
+wc -L data/fruits.txt; wc -m notes.txt
+%%
+head -n -8 data/fruits.txt; tail -c 7 data/fruits.txt; head -c -50 notes.txt | wc -c
+%%
+head data/fruits.txt data/numbers.txt | head -4
+%%
+seq 20 | head -n 15 | tail -n 3
+%%
+sort -k1,1 -k2,2nr <<< $'b 1\na 2\na 10\nb 5'
+%%
+sort -t: -k3 -n /etc/passwd | head -2 | cut -d: -f1
+%%
+sort -c data/fruits.txt; echo $?; sort data/fruits.txt | sort -c; echo $?
+%%
+sort -s -k1,1 <<< $'b 2\na 1\nb 1\na 2'
+%%
+printf 'B\na\nC\nb\n' | sort; printf 'B\na\nC\nb\n' | sort -f
+%%
+uniq -i <<< $'a\nA\nb'; uniq -c -w 1 <<< $'ab\nac\nbd'
+%%
+tr '[:upper:]' '[:lower:]' <<< 'MiXeD'; tr -s '[:space:]' <<< $'a   b\n\n\nc'; tr '\n' ' ' < data/fruits.txt; echo
+%%
+tr -d '[:digit:]' <<< 'a1b2c3'; tr a-c A-C <<< abcdef; tr -c 'a-z\n' '_' <<< 'hello, world!'
+%%
+cut -f2 <<< $'a\tb\tc'; cut -f2- -d' ' <<< 'one two three'; cut -s -d, -f1 <<< $'a,b\nnocomma'
+%%
+cut -c2- <<< hello; cut -c-2 <<< hello; cut -d, -f2 --complement data/people.csv | head -2
+%%
+paste - - < data/fruits.txt | head -2; paste -d: <(echo a) <(echo b) <(echo c)
+%%
+join <(printf '1 a\n2 b\n3 c\n') <(printf '1 x\n3 z\n'); join -v1 <(printf '1 a\n2 b\n') <(printf '1 x\n')
+%%
+grep -c '' data/fruits.txt; grep -n '' notes.txt | head -2; grep '^$' -c notes.txt
+%%
+grep -E '^(a|b)' data/fruits.txt; grep -E 'e{2}' <<< $'tree\nten'; grep 'a\{2\}' <<< $'aa\nab'
+%%
+grep -oE '[0-9]+' <<< 'a1b22c333' ; grep -o . <<< abc | wc -l
+%%
+grep -i -w 'APPLE' data/fruits.txt | head -1; grep -v -c a data/fruits.txt; grep -l apple data/* | sort
+%%
+grep -h engineer data/people.csv README.md | wc -l; grep -H fig data/fruits.txt
+%%
+grep -n -C1 cherry data/fruits.txt
+%%
+grep '\.txt' -r --include=*.md . | wc -l
+%%
+grep -P '\d{4}-\d{2}' data/server.log | head -1 | cut -c1-10
+%%
+echo 'a+b' | grep 'a+b'; echo 'aab' | grep -E 'a+b'; echo 'a|b' | grep -F 'a|b'
+%%
+grep 'x' /etc/passwd /nonexistent 2>&1 | grep -c nonexistent
+%%
+sed -n '/apple/=' data/fruits.txt; sed -n '/^$/!p' notes.txt | wc -l
+%%
+sed 's/^/> /' notes.txt | head -2; sed 's/$/;/' <<< 'end'
+%%
+sed -E 's/(\w+) (\w+)/\2 \1/' <<< 'hello world'; sed 's/\(hello\) \(world\)/\2 \1/' <<< 'hello world'
+%%
+sed '/banana/s/a/A/g' data/fruits.txt | grep -c A; sed '2,3s/^/#/' data/fruits.txt | head -4
+%%
+sed -n '2{p;q}' data/fruits.txt; sed '$!N;s/\n/ /' data/fruits.txt | head -2
+%%
+sed 's#/#|#g' <<< '/a/b/c'; sed 's,a,A,' <<< banana
+%%
+sed -e '/fig/{' -e 'i\' -e 'before fig' -e '}' data/fruits.txt | sed -n '5,7p'
+%%
+sed '0,/banana/s//BANANA/' data/fruits.txt | grep -c BANANA; sed -s -n '1p' data/fruits.txt data/numbers.txt
+%%
+seq 6 | sed -n 'n;p'; seq 6 | sed '1~2d'; seq 10 | sed -n '3,+2p'; seq 10 | sed -n '5,~4p'
+%%
+sed = data/fruits.txt | sed 'N;s/\n/\t/' | head -3
+%%
+echo aaa | sed 's/a/b/2'; echo hello | sed 'y/el/ip/'; echo 'a b' | sed 's/ /\n/'
+%%
+printf 'x\ny\n' | sed '1d;$a\
+appended'
+%%
+sed -n '/WARN/{=;p}' data/server.log
+%%
+sed 'w out.txt' data/fruits.txt > /dev/null; wc -l < out.txt; sed -n '1r notes.txt' data/numbers.txt | head -3
+%%
+awk 'BEGIN{FS=","} NR>1 && $2>30 {print $1}' data/people.csv
+%%
+awk -F, 'NR>1 {c[$4]++} END {for (r in c) print r, c[r] | "sort"}' data/people.csv
+%%
+awk '{ print NR, NF, $NF }' notes.txt
+%%
+awk 'length > 5' data/fruits.txt; awk 'length($0) == 3' data/fruits.txt
+%%
+awk '{ $1 = toupper(substr($1,1,1)) substr($1,2) } 1' data/fruits.txt | head -3
+%%
+awk 'BEGIN { printf "%s %d %.1f %5s|%-5s|\n", "s", 42.9, 2.25, "r", "l" }'
+%%
+awk 'BEGIN { x["a"]=1; x["b"]=2; delete x["a"]; for (k in x) print k; print length(x) }'
+%%
+awk 'BEGIN { a[1,2]=3; for (k in a) { split(k, p, SUBSEP); print p[1], p[2], a[k] } }'
+%%
+awk 'BEGIN { s = "hello"; print substr(s, 0, 2), substr(s, 4), substr(s, -1, 3), substr(s, 2, 100) }'
+%%
+awk 'BEGIN { print index("abc", "c"), index("abc", "z"), length(), length("") }' < /dev/null
+%%
+awk 'BEGIN { print 1==1.0, "1"==1, "a"<"b", 2<10, "2"<"10" }'
+%%
+echo "10 9" | awk '{ print ($1 < $2), ($1 > $2) }'; echo "abc 9" | awk '{ print ($1 < $2) }'
+%%
+awk 'BEGIN { x = "3x"; print x+0, +"0x1A", "1e2"+0, -"5" }'
+%%
+awk 'BEGIN { print length(12345), 1/3, 100000000, 1e20, 0.000001, 123456789012 }'
+%%
+awk 'BEGIN { OFMT="%.2f"; print 3.14159; x = 3.14159 ""; print x }'
+%%
+awk 'BEGIN { CONVFMT="%.2f"; a = 3.14159; b = a ""; print b }'
+%%
+printf 'a b\nc d\n' | awk '{ print $2 }' OFS=- ; printf 'a b\n' | awk '{ $1=$1; print }' OFS=-
+%%
+printf '1\n2\n3\n' | awk 'NR==1 { next } { print }'; printf '1\n2\n3\n' | awk '{ if ($1 == 2) exit 5; print } END { print "end" }'; echo "rc=$?"
+%%
+awk 'BEGIN { while (i < 3) { i++; if (i == 2) continue; print i } do { j++ } while (j < 5); print j }'
+%%
+awk 'BEGIN { n = split("a b  c", arr); print n, arr[3]; n = split("a:b::c", arr, ":"); print n, arr[3] "|" arr[4] }'
+%%
+awk 'BEGIN { s = "aaa"; n = gsub(/a/, "&&", s); print n, s; t = "x.y"; sub(".", "-", t); print t; u = "a.b"; gsub(/\./, "\\.", u); print u }'
+%%
+awk 'BEGIN { printf "%c%c%c\n", 72, "i", 33 }'
+%%
+awk 'BEGIN { print toupper("abc") tolower("DEF"), sprintf("%03d", 7) }'
+%%
+awk 'BEGIN { srand(1); r = rand(); print (r >= 0 && r < 1) }'
+%%
+awk '{ s += $1 } END { print s, s/NR }' data/numbers.txt
+%%
+awk 'NR==FNR { a[$1]; next } $1 in a' <(echo apple; echo kiwi) data/fruits.txt
+%%
+awk '{ print FILENAME, FNR }' data/fruits.txt notes.txt | sed -n '10,12p'
+%%
+awk -v RS=, '{ print NR": "$0 }' <<< 'a,b,c'
+%%
+awk 'BEGIN { getline line < "notes.txt"; print line; close("notes.txt"); getline line < "notes.txt"; print line }'
+%%
+echo 'a b c' | awk '{ $5 = "e"; print; print NF }'
+%%
+awk 'BEGIN { "date +%Y" | getline y; print (y > 2000) }'
+%%
+awk 'function max(a, b) { return a > b ? a : b } { m = max(m, $1) } END { print m }' data/numbers.txt
+%%
+awk 'function fill(arr, n,   i) { for (i = 1; i <= n; i++) arr[i] = i * i } BEGIN { fill(sq, 4); print sq[3], length(sq) }'
+%%
+awk '/^b/ { print; next } /^c/ { print "C:" $0 }' data/fruits.txt
+%%
+awk 'BEGIN { print substr("hello", 2) > "/dev/stderr" }' 2>&1
+%%
+awk '{ printf "%-12s %3d\n", $1, length($1) }' data/fruits.txt | head -3
+%%
+printf 'x 1\ny 2\nx 3\n' | awk '{ sum[$1] += $2 } END { for (k in sum) print k, sum[k] }' | sort
+%%
+awk -F'\t' '{ print $2 }' <<< $'a\tb\tc'; awk -F'[,;]' '{ print $3 }' <<< 'a,b;c'
+%%
+awk 'BEGIN { printf("%d items\n", 3) }'; awk 'BEGIN { print -3 % 2, 2 ** 3, 2 ^ 3 ^ 2 }'
+%%
+echo "5 apples" | awk '{ $1 *= 2 } 1'
+%%
+awk 'BEGIN { x = 1; x += x++ + ++x; print x }'
+%%
+echo 'hello world' | awk '{ print match($0, /o w/), RSTART, RLENGTH }'
+%%
+seq 5 | awk 'NR > 1 { printf "," } { printf "%s", $0 } END { print "" }'
+%%
+echo "3 4" | awk '{ print sqrt($1*$1 + $2*$2), int(7.9), exp(0), log(1), sin(0), cos(0), atan2(0, 1) }'
+%%
+cat scripts/hello.sh | head -3; bash scripts/hello.sh Ana | head -1
+%%
+cat > t.sh <<'EOF'
+#!/bin/bash
+usage() { echo "usage: $0 [-v] name" >&2; exit 2; }
+verbose=0
+while getopts "v" o; do case $o in v) verbose=1;; *) usage;; esac; done
+shift $((OPTIND-1))
+[ $# -eq 1 ] || usage
+(( verbose )) && echo "verbose mode"
+echo "name=$1"
+EOF
+chmod +x t.sh; ./t.sh -v bob; ./t.sh 2>&1; echo rc=$?
+%%
+cat > c.sh <<'EOF'
+declare -A count
+while read -r word; do
+  count[$word]=$(( ${count[$word]:-0} + 1 ))
+done < data/fruits.txt
+for w in "${!count[@]}"; do echo "$w ${count[$w]}"; done | sort -k2,2nr -k1,1
+EOF
+bash c.sh
+%%
+cat > p.sh <<'EOF'
+is_prime() { local n=$1 i; (( n < 2 )) && return 1; for ((i=2; i*i<=n; i++)); do (( n % i == 0 )) && return 1; done; return 0; }
+for n in {1..30}; do is_prime $n && printf '%d ' $n; done; echo
+EOF
+bash p.sh
+%%
+cat > r.sh <<'EOF'
+str="Hello, World"
+rev=""
+for (( i=${#str}-1; i>=0; i-- )); do rev+="${str:i:1}"; done
+echo "$rev"
+echo "${str,,}" | tr -d ',' | tr ' ' '\n' | sort
+EOF
+bash r.sh
+%%
+cat > q.sh <<'EOF'
+queue=(a b c)
+while (( ${#queue[@]} )); do
+  item=${queue[0]}; queue=("${queue[@]:1}")
+  echo "processing $item (${#queue[@]} left)"
+done
+EOF
+bash q.sh
+%%
+cat > j.sh <<'EOF'
+json='{"a": 1, "b": [1, 2, 3]}'
+echo "$json" | tr -d ' ' | sed 's/[{}"]//g' | tr ',' '\n'
+EOF
+bash j.sh
+%%
+bash -c 'echo $BASH_SUBSHELL; (echo $BASH_SUBSHELL)'; bash -c 'f() { echo func; }; export -f f; bash -c f'
+%%
+x=5 bash -c 'echo $x'; (export Y=7; bash -c 'echo $Y'); bash -c 'echo ${Y:-no}'
+%%
+bash -e -c 'false; echo no'; echo $?; bash -c 'set -o pipefail; false | true'; echo $?
+%%
+echo 'echo from stdin $1' | bash -s arg1
+%%
+env -i PATH=/usr/bin:/bin bash -c 'echo "[$HOME]"' ; env FOO=bar bash -c 'echo $FOO'
+%%
+printenv HOME | wc -l; env | grep -c '^HOME='
+%%
+timeout 1 sleep 5; echo $?; timeout 5 true; echo $?
+%%
+echo "$(seq 3)" | wc -l; echo $(seq 3) | wc -l
+%%
+seq 3 | while read n; do echo $((n*n)); done | paste -sd+ | bc
+%%
+f() { echo "$1"; shift; [ $# -gt 0 ] && f "$@"; }; f a b c
+%%
+printf '%s\n' c b a | sort | tee sorted.txt | wc -l; cat sorted.txt
+%%
+echo hello >&2 2>/dev/null; echo world 2>/dev/null >&2
+%%
+{ echo out; echo err >&2; } > o.txt 2> e.txt; cat o.txt e.txt
+%%
+ls nofile 2>&1 >/dev/null | wc -l; ls nofile >/dev/null 2>&1 | wc -l
+%%
+echo a > x; echo b >> x; echo c > x; cat x
+%%
+cat < /dev/null | wc -c; echo -n | wc -c; true > empty; wc -c < empty
+%%
+exec > >(tr a-z A-Z); echo shouted; exec >&-
+%%
+base64 data/config.json | base64 -d | cmp - data/config.json && echo roundtrip
+%%
+gzip -c data/server.log | gzip -dc | md5sum; md5sum < data/server.log
+%%
+tar cf - data | tar tf - | sort
+%%
+zcat -f /dev/null; echo $?
+%%
+echo $(( $(wc -l < data/fruits.txt) * 2 ))
+%%
+nums=$(cat data/numbers.txt); max=0; for n in $nums; do (( n > max )) && max=$n; done; echo $max
+%%
+IFS=, read -r -a f <<< "$(head -1 data/people.csv)"; echo "${f[@]}"; echo ${#f[@]}
+%%
+while IFS=, read -r name age city role; do [ "$role" = engineer ] && echo "$name ($age)"; done < data/people.csv
+%%
+echo $((16#FF + 2#11 + 8#7)) $((0xff)) $((10#08))
+%%
+x=7; printf '%s\n' $((x % 2 == 0 ? 0 : 1))
+%%
+echo ${HOME:+set} ${NOPE:+set} [${NOPE:-}]
+%%
+unset arr; arr[3]=c; arr[1]=a; echo ${arr[@]} ${!arr[@]}
+%%
+s="hello"; for ((i=0; i<${#s}; i++)); do printf '%s-' "${s:i:1}"; done; echo
+%%
+a=(3 1 2); IFS=$'\n' sorted=($(sort -n <<< "${a[*]}")); unset IFS; echo "${sorted[@]}"
+%%
+echo {1..3}{a,b} | tr ' ' ,; echo {a..z..5}; echo {10..1..3}; echo {z..u}
+%%
+echo a{,b,c}d; echo {x,y}{,}; echo '{a,b}' "{a,b}" \{a,b\}
+%%
+x=3; echo {1..$x}; eval echo {1..$x}
+%%
+find data -name '*.txt' -newer README.md | wc -l
+%%
+find . -iname 'readme*' | sort; find . -path '*/data/*' -name 'n*'
