@@ -1,0 +1,90 @@
+:root {
+  --bg: #300a24;
+  --bar: #2b2b2b;
+  --bar-fg: #dcdcdc;
+  --muted: #9a9a9a;
+  --card: #1e1e1e;
+  --link: #8ab4f8;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif;
+  overflow: hidden;
+}
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--bar);
+  color: var(--bar-fg);
+  user-select: none;
+}
+.dots { display: flex; gap: 6px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; background: #5a5a5a; display: block; }
+.dots i:first-child { background: #e95420; }
+.title { flex: 1; text-align: center; font-weight: 600; font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.about { color: var(--muted); text-decoration: none; font-size: 12px; }
+.about:hover, .about:focus { color: var(--bar-fg); }
+#terminal {
+  flex: 1;
+  min-height: 0;
+  padding: 6px 0 0 8px;
+  background: var(--bg);
+}
+#terminal .xterm { height: 100%; }
+#terminal .xterm-viewport { background-color: var(--bg) !important; }
+#keybar {
+  flex: none;
+  display: none;
+  gap: 4px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: var(--bar);
+  overflow-x: auto;
+}
+#keybar button {
+  flex: none;
+  min-width: 40px;
+  height: 34px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: #444;
+  color: #fff;
+  font: 600 14px/1 ui-monospace, monospace;
+}
+#keybar button.on { background: #e95420; }
+@media (pointer: coarse) {
+  #keybar { display: flex; }
+}
+.about-panel {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10;
+}
+.about-panel:target { display: flex; }
+.card {
+  max-width: 560px;
+  background: var(--card);
+  color: #e8e8e8;
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.card h1 { font-size: 18px; margin: 0 0 10px; }
+.card p { margin: 0 0 10px; }
+.card a { color: var(--link); }
+.card code { background: #333; padding: 1px 5px; border-radius: 4px; }
+.noscript { padding: 16px; }
