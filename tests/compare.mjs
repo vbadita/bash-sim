@@ -73,5 +73,12 @@ for (const f of failures) {
   console.log('--- real (status ' + f.real.status + '):\n' + JSON.stringify(f.real.out) + (f.real.err ? '\nERR ' + JSON.stringify(f.real.err) : ''));
   console.log('--- sim  (status ' + f.mine.status + '):\n' + JSON.stringify(f.mine.out) + (f.mine.err ? '\nERR ' + JSON.stringify(f.mine.err) : ''));
 }
+// in GitHub Actions also emit annotations (readable through the API)
+if (process.env.GITHUB_ACTIONS) {
+  const esc = (x) => String(x).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  for (const f of failures.slice(0, 10)) {
+    console.log(`::error title=case ${f.i} differs::${esc(`${f.src}\nreal(${f.real.status}): ${JSON.stringify(f.real.out).slice(0, 400)} ${JSON.stringify(f.real.err).slice(0, 200)}\nsim(${f.mine.status}): ${JSON.stringify(f.mine.out).slice(0, 400)} ${JSON.stringify(f.mine.err).slice(0, 200)}`)}`);
+  }
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
