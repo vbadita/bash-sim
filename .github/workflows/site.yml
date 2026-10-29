@@ -1,0 +1,76 @@
+# test -> build the static site -> push branch "site" -> verify that the VM
+# (bash-site-sync.timer, every 5 min) serves this build and it boots in Chrome.
+# No secrets: the site is static and the VM pulls it.
+name: site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site                        # builds publish in order; never cancel one halfway
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tools (the runner's bash 5.2, node, gawk)
+        run: |
+          bash --version | head -1
+          node --version
+          command -v gawk || { sudo apt-get update -qq && sudo apt-get install -y -qq gawk; }
+          awk --version | head -1
+      - name: Every module parses
+        run: for f in site/js/*.js site/js/cmds/*.js; do node --check "$f"; done
+      - name: Differential tests against real bash (batch 1)
+        run: node tests/compare.mjs
+      - name: Differential tests against real bash (batch 2)
+        run: CASES=2 node tests/compare.mjs
+
+  build:
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write                # push branch "site" only
+    outputs:
+      commit: ${{ steps.sha.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: sha
+        run: echo "commit=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Build site
+        run: scripts/build-site.sh _site "${{ steps.sha.outputs.commit }}"
+      - name: "Publish to branch site (one commit, force-pushed, so no history bloat)"
+        run: |
+          cd _site
+          git init -q -b site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "site built from ${{ steps.sha.outputs.commit }}"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" site
+
+  verify:
+    needs: build
+    runs-on: ubuntu-24.04            # x64 image ships Google Chrome
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Wait until the VM serves this build
+        run: scripts/wait-site.sh "https://apps.badita.com/bash/version.json" "${{ needs.build.outputs.commit }}"
+      - name: Browser test (headless Chrome, live page boots to a prompt, no CSP violations)
+        run: scripts/e2e-site.sh "https://apps.badita.com/bash/"
