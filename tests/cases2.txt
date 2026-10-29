@@ -255,7 +255,7 @@ grep -P '\d{4}-\d{2}' data/server.log | head -1 | cut -c1-10
 %%
 echo 'a+b' | grep 'a+b'; echo 'aab' | grep -E 'a+b'; echo 'a|b' | grep -F 'a|b'
 %%
-grep 'x' /etc/passwd /nonexistent 2>&1 | grep -c nonexistent
+grep 'a' data/fruits.txt /nonexistent 2>&1 | grep -c nonexistent; grep -s a /nonexistent; echo rc=$?
 %%
 sed -n '/apple/=' data/fruits.txt; sed -n '/^$/!p' notes.txt | wc -l
 %%
